@@ -4,9 +4,7 @@ fn main() {
 
     let numbers = input
         .lines()
-        .map(str::parse::<i32>)
-        .filter(Result::is_ok)
-        .map(Result::unwrap)
+        .filter_map(|l| l.parse::<i32>().ok())
         .collect::<Vec<i32>>();
 
     let count = numbers.windows(2).filter(|item| item[0] < item[1]).count();
@@ -14,7 +12,7 @@ fn main() {
 
     let count = numbers
         .windows(3)
-        .map(|item| item[0] + item[1] + item[2])
+        .map(|item| item.iter().sum())
         .collect::<Vec<i32>>()
         .windows(2)
         .filter(|item| item[0] < item[1])
