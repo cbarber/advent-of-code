@@ -4,6 +4,7 @@ const INPUT: &str = include_str!("input");
 struct Position {
     horizontal: i32,
     vertical: i32,
+    aim: i32,
 }
 
 impl Position {
@@ -12,6 +13,18 @@ impl Position {
             Command::Forward(unit) => self.horizontal += unit,
             Command::Up(unit) => self.vertical -= unit,
             Command::Down(unit) => self.vertical += unit,
+        }
+        self
+    }
+
+    fn aimed_step(mut self, command: &Command) -> Self {
+        match command {
+            Command::Forward(unit) => {
+                self.horizontal += unit;
+                self.vertical += self.aim * unit;
+            }
+            Command::Up(unit) => self.aim -= unit,
+            Command::Down(unit) => self.aim += unit,
         }
         self
     }
@@ -38,7 +51,12 @@ fn main() {
     let position = commands
         .iter()
         .fold(Position::default(), |acc, c| acc.step(&c));
+    println!("{:?}", position);
+    println!("{}", position.horizontal * position.vertical);
 
+    let position = commands
+        .iter()
+        .fold(Position::default(), |acc, c| acc.aimed_step(&c));
     println!("{:?}", position);
     println!("{}", position.horizontal * position.vertical);
 }
