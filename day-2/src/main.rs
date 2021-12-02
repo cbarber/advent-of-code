@@ -30,6 +30,7 @@ impl Position {
     }
 }
 
+#[derive(Debug, PartialEq)]
 enum Command {
     Forward(i32),
     Up(i32),
@@ -60,4 +61,14 @@ fn main() {
         .fold(Position::default(), |acc, c| acc.aimed_step(&c));
     println!("{:?}", position);
     println!("{}", position.horizontal * position.vertical);
+}
+
+#[test]
+fn test_parse() {
+    assert_eq!(Some(Command::Forward(1)), parse("forward 1"));
+    assert_eq!(Some(Command::Up(8)), parse("up 8"));
+    assert_eq!(Some(Command::Down(5)), parse("down 5"));
+    assert_eq!(None, parse(""));
+    assert_eq!(None, parse("garbage"));
+    assert_eq!(None, parse("up8"));
 }
