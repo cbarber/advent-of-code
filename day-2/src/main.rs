@@ -37,12 +37,13 @@ enum Command {
 }
 
 fn parse(line: &str) -> Option<Command> {
-    match line.split_once(" ").map(|c| (c.0, c.1.parse::<i32>().ok())) {
-        Some(("forward", Some(unit))) => Some(Command::Forward(unit)),
-        Some(("up", Some(unit))) => Some(Command::Up(unit)),
-        Some(("down", Some(unit))) => Some(Command::Down(unit)),
-        _ => None,
-    }
+    line.split_once(" ")
+        .and_then(|(text, unit)| match (text, unit.parse::<i32>()) {
+            ("forward", Ok(unit)) => Some(Command::Forward(unit)),
+            ("up", Ok(unit)) => Some(Command::Up(unit)),
+            ("down", Ok(unit)) => Some(Command::Down(unit)),
+            _ => None,
+        })
 }
 
 fn main() {
