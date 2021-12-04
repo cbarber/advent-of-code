@@ -64,6 +64,7 @@ struct BingoGame {
     draw: VecDeque<u8>,
     cards: Vec<BingoCard>,
     last_draw: Option<u8>,
+    last_loser: Option<usize>,
 }
 
 impl BingoGame {
@@ -81,12 +82,14 @@ impl BingoGame {
             draw,
             cards,
             last_draw: None,
+            last_loser: None,
         }
     }
 
     fn play(&mut self) -> Option<u8> {
         self.last_draw = self.draw.pop_front();
         if let Some(draw) = self.last_draw {
+            self.last_loser = self.last_loser_position();
             self.cards.iter_mut().for_each(|c| c.play(draw));
         }
         self.last_draw
@@ -95,21 +98,35 @@ impl BingoGame {
     fn find_winners(&self) -> Vec<&BingoCard> {
         self.cards.iter().filter(|c| c.is_winner()).collect()
     }
+
+    fn find_losers(&self) -> Vec<&BingoCard> {
+        self.cards.iter().filter(|c| !c.is_winner()).collect()
+    }
+
+    fn last_loser(&self) -> Option<&BingoCard> {
+        self.last_loser.map(|pos| &self.cards[pos])
+    }
+
+    fn last_loser_position(&self) -> Option<usize> {
+        self.cards.iter().position(|c| !c.is_winner())
+    }
 }
 
 fn main() {
     let mut game = BingoGame::new(INPUT);
-    while game.find_winners().is_empty() {
-        game.play()
-    }
+    while game.find_winners().is_empty() && game.play().is_some() {}
     println!(
         "{}",
         game.find_winners()[0].score(game.last_draw.expect("drawn number"))
     );
-        }
-    };
 
-    println!("{}", winners[0].score(last_drawn));
+    while !game.find_losers().is_empty() && game.play().is_some() {}
+    println!(
+        "{}",
+        game.last_loser()
+            .expect("last loser")
+            .score(game.last_draw.expect("drawn number"))
+    );
 }
 
 #[cfg(test)]
