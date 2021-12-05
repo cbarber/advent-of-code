@@ -65,7 +65,11 @@ impl Line {
                 })
                 .collect()
         } else {
-            vec![]
+            range(self.start.x, self.stop.x)
+                .iter()
+                .zip(range(self.start.y, self.stop.y))
+                .map(|(x, y)| Point { x: *x, y })
+                .collect()
         };
         points
     }
@@ -117,5 +121,5 @@ const TEST_INPUT: &str = "0,9 -> 5,9
 #[test]
 fn test_grid() {
     let grid = Grid::new(TEST_INPUT);
-    assert_eq!(5, grid.count_dangerous());
+    assert_eq!(12, grid.count_dangerous());
 }
