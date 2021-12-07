@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use pest::Parser;
 
@@ -13,43 +13,25 @@ extern crate pest_derive;
 pub struct LanternFishParser;
 
 #[derive(Debug)]
-struct Fish {
-    age: u8,
-}
-
-impl Fish {
-    fn step(&mut self) -> Option<Fish> {
-        if self.age == 0 {
-            self.age = 6;
-            Some(Fish { age: 8 })
-        } else {
-            self.age -= 1;
-            None
-        }
-    }
-}
-
-impl FromStr for Fish {
-    type Err = std::num::ParseIntError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.parse::<u8>().map(|age| Fish { age })
-    }
-}
-
-#[derive(Debug)]
 struct Fishies {
-    fishies: Vec<Fish>,
+    fishies: HashMap<i8, u64>,
 }
 
 impl Fishies {
     fn step(&mut self) {
-        let mut baby_fishies = self.fishies.iter_mut().filter_map(Fish::step).collect();
-        self.fishies.append(&mut baby_fishies);
+        self.fishies = self
+            .fishies
+            .iter()
+            .map(|(age, count)| (age - 1, *count))
+            .collect();
+        if let Some(count) = self.fishies.remove(&-1) {
+            *self.fishies.entry(6).or_insert(0) += count;
+            *self.fishies.entry(8).or_insert(0) += count;
+        }
     }
 
-    fn count(&self) -> usize {
-        self.fishies.len()
+    fn count(&self) -> u64 {
+        self.fishies.values().sum()
     }
 }
 
@@ -62,10 +44,13 @@ impl FromStr for Fishies {
 
         let fishies = pairs
             .filter_map(|pair| match pair.as_rule() {
-                Rule::fish => pair.as_str().parse::<Fish>().ok(),
+                Rule::fish => pair.as_str().parse::<i8>().ok(),
                 _ => None,
             })
-            .collect::<Vec<Fish>>();
+            .fold(HashMap::new(), |mut acc, age| {
+                *acc.entry(age).or_insert(0) += 1;
+                acc
+            });
 
         Ok(Fishies { fishies })
     }
@@ -74,6 +59,8 @@ impl FromStr for Fishies {
 fn main() {
     let mut fishies = INPUT.parse::<Fishies>().unwrap();
     (0..80).for_each(|_| fishies.step());
+    println!("{}", fishies.count());
+    (80..256).for_each(|_| fishies.step());
     println!("{}", fishies.count());
 }
 
@@ -87,4 +74,11 @@ fn test_part_1() {
     assert_eq!(26, fishies.count());
     (18..80).for_each(|_| fishies.step());
     assert_eq!(5934, fishies.count());
+}
+
+#[test]
+fn test_part_2() {
+    let mut fishies = TEST_INPUT.parse::<Fishies>().unwrap();
+    (0..256).for_each(|_| fishies.step());
+    assert_eq!(26984457539, fishies.count());
 }
