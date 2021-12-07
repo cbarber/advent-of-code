@@ -1,0 +1,3 @@
+age = { '0'..'8' }
+fish = { age }
+fish_list = _{ fish ~ ("," ~ fish)+ }
