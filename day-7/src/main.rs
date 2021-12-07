@@ -18,6 +18,24 @@ impl Crabbies {
         let median = self.median();
         self.crabbies.iter().map(|i| (median - i).abs()).sum()
     }
+
+    fn revised_min_fuel(&self) -> i32 {
+        let min = *self.crabbies.first().unwrap();
+        let max = *self.crabbies.last().unwrap();
+
+        (min..max)
+            .map(|position| {
+                self.crabbies
+                    .iter()
+                    .map(|i| {
+                        let n = (position - i).abs() as f32;
+                        (n * (1.0 + n) / 2.0).round() as i32
+                    })
+                    .sum::<i32>()
+            })
+            .min()
+            .unwrap()
+    }
 }
 
 impl<'a> TryFrom<&'a str> for Crabbies {
@@ -43,6 +61,8 @@ impl<'a> TryFrom<&'a str> for Crabbies {
 fn main() {
     let crabbies = Crabbies::try_from(INPUT).expect("parse input");
     println!("{:?}", crabbies.min_fuel());
+
+    println!("{:?}", crabbies.revised_min_fuel());
 }
 
 #[cfg(test)]
