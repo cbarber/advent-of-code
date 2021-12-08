@@ -1,0 +1,6 @@
+segment = { 'a'..'g' }
+digit = { segment+ }
+patterns = { digit ~ (" " ~ digit){9} }
+output = { digit ~ (" " ~ digit){3} }
+sequence = { patterns ~ " | " ~ output }
+sequence_list = _{ sequence ~ (NEWLINE ~ sequence)* }
