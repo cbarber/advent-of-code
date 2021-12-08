@@ -82,6 +82,14 @@ impl<'a> SegmentSequences<'a> {
             .filter(|d| digits.contains(d))
             .count()
     }
+
+    fn sum(&self) -> u32 {
+        self.sequences
+            .iter()
+            .map(SegmentSequence::decode)
+            .map(|digits| digits.iter().fold(0u32, |acc, d| acc * 10u32 + *d as u32))
+            .sum()
+    }
 }
 
 impl<'a> TryFrom<&'a str> for SegmentSequences<'a> {
@@ -124,6 +132,8 @@ impl<'a> TryFrom<&'a str> for SegmentSequences<'a> {
 fn main() {
     let segment_sequences = SegmentSequences::try_from(INPUT).expect("segment sequences to parse");
     println!("{}", segment_sequences.count(vec![1, 4, 7, 8]));
+
+    println!("{}", segment_sequences.sum());
 }
 
 #[cfg(test)]
@@ -144,4 +154,6 @@ fn part_1() {
     let segment_sequences =
         SegmentSequences::try_from(TEST_INPUT).expect("segment sequences to parse");
     assert_eq!(26, segment_sequences.count(vec![1, 4, 7, 8]));
+
+    assert_eq!(61229, segment_sequences.sum());
 }
