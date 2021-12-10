@@ -1,0 +1,6 @@
+paren = { "(" ~ chunk* ~ ")" }
+square = { "[" ~ chunk* ~ "]" }
+curly = { "{" ~ chunk* ~ "}" }
+angle = { "<" ~ chunk* ~ ">" }
+chunk = { paren | square | curly | angle }
+chunk_list = { SOI ~ chunk+ ~ EOI }
