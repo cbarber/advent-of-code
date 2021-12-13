@@ -5,6 +5,7 @@ const INPUT: &str = include_str!("input");
 
 struct Octopuses {
     map: Array2<u32>,
+    step_count: u32,
 }
 
 impl FromStr for Octopuses {
@@ -19,7 +20,7 @@ impl FromStr for Octopuses {
         )
         .expect("parse octopuses");
 
-        Ok(Self { map })
+        Ok(Self { map, step_count: 0 })
     }
 }
 
@@ -37,6 +38,7 @@ impl Octopuses {
         let count = flashing.iter().map(|pos| self.flash(pos)).sum();
 
         self.map.iter_mut().filter(|o| **o > 9).for_each(|o| *o = 0);
+        self.step_count += 1;
 
         count
     }
@@ -77,6 +79,11 @@ fn main() {
     let flash_count = (0..100).map(|_| octopuses.step()).sum::<u32>();
 
     println!("{}", flash_count);
+
+    let len = octopuses.map.len();
+    while octopuses.step() != len as u32 {}
+
+    println!("{}", octopuses.step_count);
 }
 
 #[cfg(test)]
@@ -98,4 +105,14 @@ fn part_1() {
     let flash_count = (0..100).map(|_| octopuses.step()).sum::<u32>();
 
     assert_eq!(1656, flash_count);
+}
+
+#[test]
+fn part_2() {
+    let mut octopuses = TEST_INPUT.parse::<Octopuses>().expect("parse octopuses");
+
+    let len = octopuses.map.len();
+    while octopuses.step() != len as u32 {}
+
+    assert_eq!(195, octopuses.step_count);
 }
