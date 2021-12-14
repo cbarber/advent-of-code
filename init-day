@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+day=${1:-$(date +%-d`)}
+year=${2:-$(date +%Y`)}
+
+aocf checkout $day 2021
+
+cargo init "day-$day"
+sed -i "s/\(\"day-[0-9]*\"\)\$/\1,\n  \"day-$day\"/" Cargo.toml
+sed -i '1s/^/const INPUT: \&str = include_str!("input");\n\n/' day-$day/src/main.rs
+aocf input > day-$day/src/input
+aocf brief > day-$day/brief
+
+git add Cargo.toml
+git add day-$day
+
+nvim day-$day/brief
