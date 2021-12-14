@@ -1,4 +1,8 @@
-use petgraph::{graphmap::UnGraphMap, EdgeDirection::Outgoing};
+use petgraph::{
+    dot::{Config, Dot},
+    graphmap::UnGraphMap,
+    EdgeDirection::Outgoing,
+};
 use std::iter::from_fn;
 
 const INPUT: &str = include_str!("input");
@@ -99,6 +103,11 @@ fn main() {
     println!("{}", cave.path_count());
 
     println!("{}", cave.twice_path_count());
+
+    println!(
+        "{:?}",
+        Dot::with_config(&cave.graph, &[Config::EdgeNoLabel])
+    );
 }
 
 #[cfg(test)]
