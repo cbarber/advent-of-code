@@ -1,3 +1,4 @@
+use colored::Colorize;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
 use text_io::scan;
 
@@ -14,7 +15,22 @@ enum Fold {
 }
 
 impl Display for Thermal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {}
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.grid_for(self.folds.len())
+            .iter()
+            .for_each(|((x, y), v)| {
+                if x == &0 && y != &0 {
+                    f.write_str("\n").expect("write newline");
+                }
+                match v {
+                    '*' => f.write_fmt(format_args!("{}", "*".green())),
+                    '#' => f.write_fmt(format_args!("{}", "#".red())),
+                    _ => Ok(()),
+                }
+                .expect("write value");
+            });
+        f.write_str("\n")
+    }
 }
 
 impl FromStr for Thermal {
@@ -120,6 +136,8 @@ fn main() {
     let thermal = INPUT.parse::<Thermal>().expect("parse thermal");
     let grid = thermal.grid_for(1);
     println!("{}", grid.iter().filter(|(_, v)| *v == '#').count());
+
+    println!("{}", thermal);
 }
 
 #[cfg(test)]
