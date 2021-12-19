@@ -120,6 +120,10 @@ fn main() {
     (0..10).for_each(|_| polymerization.step());
 
     println!("{}", polymerization.max() - polymerization.min());
+
+    (10..40).for_each(|_| polymerization.step());
+
+    println!("{}", polymerization.max() - polymerization.min());
 }
 
 #[cfg(test)]
@@ -160,4 +164,16 @@ fn test_part_1() {
 
     assert_eq!(161, polymerization.min());
     assert_eq!(1749, polymerization.max());
+}
+
+#[test]
+fn test_part_2() {
+    let mut polymerization = TEST_INPUT
+        .parse::<Polymerization>()
+        .expect("parse polymerization");
+
+    (0..40).for_each(|_| polymerization.step());
+
+    assert_eq!(3849876073, polymerization.min());
+    assert_eq!(2192039569602, polymerization.max());
 }
