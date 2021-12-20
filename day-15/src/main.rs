@@ -1,3 +1,4 @@
+use colored::Colorize;
 use ndarray::Array2;
 use pathfinding::prelude::dijkstra;
 use std::str::FromStr;
@@ -57,9 +58,9 @@ impl Pos {
 impl Cave {
     fn neighbors(&self, pos: &Pos) -> Vec<(Pos, usize)> {
         vec![pos.up(), pos.down(), pos.left(), pos.right()]
-            .into_iter()
-            .filter_map(|p| p)
-            .filter_map(|p| self.0.get((p.0, p.1)).map(|c| (p, *c)))
+            .iter()
+            .filter_map(|p| p.as_ref())
+            .filter_map(|p| self.0.get((p.0, p.1)).map(|c| (p.clone(), *c)))
             .collect()
     }
 
@@ -70,9 +71,74 @@ impl Cave {
     }
 }
 
+struct FullCave(Array2<usize>);
+
+impl FullCave {
+    fn new(cave: Cave) -> Self {
+        Self(cave.0)
+    }
+
+    fn get(&self, pos: &Pos) -> Option<usize> {
+        let shape = self.0.shape();
+        let rows = shape[0];
+        let cols = shape[1];
+
+        if pos.0 >= rows * 5 || pos.1 >= cols * 5 {
+            return None;
+        }
+
+        let inc = pos.0 / rows + pos.1 / cols;
+        let row = pos.0 % rows;
+        let col = pos.1 % cols;
+
+        self.0.get((row, col)).map(|c| {
+            let c = c + inc;
+            if c > 9 {
+                (c + 1) % 10
+            } else {
+                c
+            }
+        })
+    }
+
+    fn neighbors(&self, pos: &Pos) -> Vec<(Pos, usize)> {
+        vec![pos.up(), pos.down(), pos.left(), pos.right()]
+            .into_iter()
+            .filter_map(|p| p)
+            .filter_map(|p| self.get(&p).map(|c| (p, c)))
+            .collect()
+    }
+
+    fn shortest_path(&self) -> Option<(Vec<Pos>, usize)> {
+        let shape = self.0.shape();
+        let rows = shape[0];
+        let cols = shape[1];
+        let target = Pos(rows * 5 - 1, cols * 5 - 1);
+        dijkstra(&Pos(0, 0), |p| self.neighbors(p), |p| *p == target)
+    }
+}
+
 fn main() {
     let cave = INPUT.parse::<Cave>().expect("parse cave");
-    println!("{:?}", cave.shortest_path());
+    let result = cave.shortest_path().expect("find shortest path");
+    println!("{}", result.1);
+
+    let full_cave = FullCave::new(cave);
+    let result = full_cave.shortest_path().expect("find shortest path");
+
+    for row in 0..500 {
+        for col in 0..500 {
+            let out = format!("{}", full_cave.get(&Pos(row, col)).unwrap());
+            if result.0.contains(&Pos(row, col)) {
+                print!("{}", out.red());
+            } else {
+                print!("{}", out.green());
+            }
+        }
+        println!("");
+    }
+
+    println!("{}", result.1);
 }
 
 #[cfg(test)]
@@ -117,4 +183,13 @@ fn part_1() {
         )),
         cave.shortest_path()
     );
+}
+
+#[test]
+fn part_2() {
+    let cave = TEST_INPUT.parse::<Cave>().expect("parse cave");
+    let full_cave = FullCave::new(cave);
+    let result = full_cave.shortest_path().expect("find shortest path");
+
+    assert_eq!(315, result.1);
 }
