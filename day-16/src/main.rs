@@ -122,6 +122,25 @@ impl Packet {
                 }
             }
     }
+
+    fn eval(&self) -> u64 {
+        match self.packet {
+            InnerPacket::Literal(v) => v as u64,
+            InnerPacket::Operator(ref operation, ref packets) => {
+                let mut iter = packets.iter().map(|p| p.eval());
+                match operation {
+                    Operation::Sum => iter.sum(),
+                    Operation::Product => iter.product(),
+                    Operation::Minimum => iter.min().unwrap_or(0u64),
+                    Operation::Maximum => iter.max().unwrap_or(0u64),
+                    Operation::GreaterThan if iter.next() > iter.next() => 1,
+                    Operation::LessThan if iter.next() < iter.next() => 1,
+                    Operation::EqualTo if iter.next() == iter.next() => 1,
+                    _ => 0,
+                }
+            }
+        }
+    }
 }
 
 impl FromStr for Packet {
@@ -144,18 +163,34 @@ enum InnerPacket {
 
 #[derive(Debug, PartialEq)]
 enum Operation {
-    NoOp,
+    Sum,
+    Product,
+    Minimum,
+    Maximum,
+    GreaterThan,
+    LessThan,
+    EqualTo,
 }
 
 impl From<u8> for Operation {
-    fn from(_value: u8) -> Self {
-        Operation::NoOp
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Operation::Sum,
+            1 => Operation::Product,
+            2 => Operation::Minimum,
+            3 => Operation::Maximum,
+            5 => Operation::GreaterThan,
+            6 => Operation::LessThan,
+            7 => Operation::EqualTo,
+            v => panic!("Invalid operator value: {}", v),
+        }
     }
 }
 
 fn main() {
     let packet = INPUT.parse::<Packet>().unwrap();
     println!("{}", packet.version_sum());
+    println!("{}", packet.eval());
 }
 
 #[test]
@@ -179,15 +214,15 @@ fn test_nested_operator_packet() {
         Packet {
             version: 4,
             packet: InnerPacket::Operator(
-                Operation::NoOp,
+                Operation::Minimum,
                 vec![Packet {
                     version: 1,
                     packet: InnerPacket::Operator(
-                        Operation::NoOp,
+                        Operation::Minimum,
                         vec![Packet {
                             version: 5,
                             packet: InnerPacket::Operator(
-                                Operation::NoOp,
+                                Operation::Minimum,
                                 vec![Packet {
                                     version: 6,
                                     packet: InnerPacket::Literal(15),
@@ -211,7 +246,7 @@ fn test_operator_packet_by_length() {
         Packet {
             version: 1,
             packet: InnerPacket::Operator(
-                Operation::NoOp,
+                Operation::LessThan,
                 vec![
                     Packet {
                         version: 6,
@@ -247,4 +282,25 @@ fn test_nested_operator_packet_4() {
     const TEST_INPUT: &str = "A0016C880162017C3686B18A3D4780";
     let packet = TEST_INPUT.parse::<Packet>().unwrap();
     assert_eq!(31, packet.version_sum())
+}
+
+#[test]
+fn test_sum() {
+    const TEST_INPUT: &str = "C200B40A82";
+    let packet = TEST_INPUT.parse::<Packet>().unwrap();
+    assert_eq!(3, packet.eval())
+}
+
+#[test]
+fn test_product() {
+    const TEST_INPUT: &str = "04005AC33890";
+    let packet = TEST_INPUT.parse::<Packet>().unwrap();
+    assert_eq!(54, packet.eval())
+}
+
+#[test]
+fn test_equals() {
+    const TEST_INPUT: &str = "9C0141080250320F1802104A08";
+    let packet = TEST_INPUT.parse::<Packet>().unwrap();
+    assert_eq!(1, packet.eval())
 }
