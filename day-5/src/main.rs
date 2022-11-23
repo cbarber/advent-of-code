@@ -76,7 +76,6 @@ impl Line {
 }
 
 struct Grid {
-    lines: Vec<Line>,
     points: HashMap<Point, u8>,
 }
 
@@ -93,7 +92,7 @@ impl Grid {
                     *count += 1;
                     acc
                 });
-        Self { lines, points }
+        Self { points }
     }
 
     fn count_dangerous(&self) -> usize {
