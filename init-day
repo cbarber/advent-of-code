@@ -14,4 +14,4 @@ aocf brief > day-$day/brief
 git add Cargo.toml
 git add day-$day
 
-nvim day-$day/brief
+lvim day-$day/brief
