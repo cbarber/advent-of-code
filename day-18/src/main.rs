@@ -1,5 +1,6 @@
 #![feature(box_patterns)]
 #![feature(int_roundings)]
+use itertools::Itertools;
 use pest::Parser;
 use std::fmt;
 
@@ -14,6 +15,7 @@ extern crate pest_derive;
 pub struct SnailFishParser;
 
 #[derive(Debug)]
+#[derive(Clone)]
 enum Element {
     Pair(Box<Element>, Box<Element>),
     Value(u8),
@@ -120,7 +122,9 @@ impl Element {
 
     fn magnitude(&self) -> u16 {
         match self {
-            Element::Pair(box left, box right) => left.magnitude() * 3u16 + right.magnitude() * 2u16,
+            Element::Pair(box left, box right) => {
+                left.magnitude() * 3u16 + right.magnitude() * 2u16
+            }
             Element::Value(value) => *value as u16,
         }
     }
@@ -132,11 +136,28 @@ struct Homework {
 }
 
 impl Homework {
-    fn sum(self) -> Element {
+    fn sum(&self) -> Element {
         self.pairs
+            .clone()
             .into_iter()
             .reduce(Element::add)
             .expect("summed pair")
+    }
+
+    fn largest_magnitude(&self) -> u16 {
+        self.pairs
+            .clone()
+            .into_iter()
+            .permutations(2)
+            .map(|pairs| {
+                pairs
+                    .into_iter()
+                    .reduce(Element::add)
+                    .expect("summed pair")
+                    .magnitude()
+            })
+            .max()
+            .expect("maximum value")
     }
 }
 
@@ -178,7 +199,9 @@ impl<'a> TryFrom<&'a str> for Homework {
 
 fn main() {
     let homework = Homework::try_from(INPUT).unwrap();
-    println!("part 1: {}", homework.sum().magnitude())
+    println!("part 1: {}", homework.sum().magnitude());
+
+    println!("part 2: {}", homework.largest_magnitude())
 }
 
 #[test]
@@ -267,16 +290,23 @@ fn test_sum_5() {
 [[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]]
 [[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]
 "#,
-    ).unwrap().sum();
-    assert_eq!("[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]", format!("{}", homework));
-    assert_eq!(4140, homework.magnitude())
+    )
+    .unwrap();
+    let sum = homework.sum();
+    assert_eq!(
+        "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]",
+        format!("{}", sum)
+    );
+    assert_eq!(4140, sum.magnitude());
+
+    assert_eq!(3993, homework.largest_magnitude())
 }
 
 #[test]
 fn test_magnitude() {
-    let homework = Homework::try_from(
-        r#"[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]"#,
-    ).unwrap().sum();
+    let homework = Homework::try_from(r#"[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]"#)
+        .unwrap()
+        .sum();
 
     assert_eq!(3488, homework.magnitude())
 }
