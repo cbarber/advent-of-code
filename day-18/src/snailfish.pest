@@ -1,0 +1,5 @@
+number = { ASCII_DIGIT }
+start_pair = { "[" }
+stop_pair = { "]" }
+pair = { start_pair ~ (number | pair) ~ "," ~ (number | pair)  ~ stop_pair }
+lines = { pair ~ ("\n" ~ pair)* ~ "\n"? ~ EOI }
