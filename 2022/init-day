@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euf -o pipefail
+
 day=${1:-$(date +%-d)}
 year=${2:-$(date +%Y)}
 
