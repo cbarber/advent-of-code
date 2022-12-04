@@ -11,9 +11,9 @@ cargo init "day-$day"
 sed -i "s/\(\"day-[0-9]*\"\)\$/\1,\n  \"day-$day\"/" Cargo.toml
 sed -i '1s/^/const INPUT: \&str = include_str!("input");\n\n/' day-$day/src/main.rs
 aocf input > day-$day/src/input
-aocf brief > day-$day/brief
+aocf brief > day-$day/brief.md
 
 git add Cargo.toml
 git add day-$day
 
-lvim day-$day/brief
+lvim day-$day/brief.md
