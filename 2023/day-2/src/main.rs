@@ -8,7 +8,7 @@ use nom::{
 
 const INPUT: &str = include_str!("input");
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Color {
     Red,
     Blue,
@@ -25,11 +25,33 @@ impl Game {
     fn possible(&self, max_sets: &Vec<Set>) -> bool {
         self.subsets.iter().all(|subset| subset.possible(max_sets))
     }
+
+    fn fewest_possible(&self) -> Subset {
+        let sets = vec![Color::Red, Color::Blue, Color::Green]
+            .iter()
+            .map(|color| {
+                self.subsets
+                    .iter()
+                    .filter_map(|subset| subset.sets.iter().find(|set| &set.color == color))
+                    .max_by_key(|set| set.count)
+                    .unwrap()
+                    .clone()
+            })
+            .collect();
+
+        Subset { sets }
+    }
 }
 
 #[derive(Debug)]
 struct Subset {
     sets: Vec<Set>,
+}
+
+impl Subset {
+    fn power(&self) -> u32 {
+        self.sets.iter().map(|set| set.count).product()
+    }
 }
 
 impl Subset {
@@ -43,7 +65,7 @@ impl Subset {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Set {
     color: Color,
     count: u32,
@@ -119,8 +141,17 @@ fn process_1(input: &str) -> u32 {
         .sum()
 }
 
+fn process_2(input: &str) -> u32 {
+    let games = parse(input).unwrap().1;
+    games
+        .iter()
+        .map(|g| g.fewest_possible().power())
+        .sum()
+}
+
 fn main() {
     println!("{}", process_1(INPUT));
+    println!("{}", process_2(INPUT));
 }
 
 #[test]
@@ -132,4 +163,15 @@ Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
 Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 ";
     assert_eq!(8, process_1(INPUT))
+}
+
+#[test]
+fn test_process_2() {
+    const INPUT: &str = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+";
+    assert_eq!(2286, process_2(INPUT))
 }
