@@ -1,8 +1,10 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::digit1,
+    character::complete::{digit1, newline},
+    combinator::value,
     multi::{many1, separated_list1},
+    sequence::{preceded, separated_pair, terminated},
     IResult,
 };
 
@@ -75,19 +77,20 @@ fn parse(input: &str) -> IResult<&str, Vec<Game>> {
     many1(parse_game)(input)
 }
 
+fn parse_game_heading(input: &str) -> IResult<&str, u32> {
+    preceded(tag("Game "), nom::character::complete::u32)(input)
+}
+
+fn parse_game_body(input: &str) -> IResult<&str, Vec<Subset>> {
+    separated_list1(tag(";"), parse_subset)(input)
+}
+
 fn parse_game(input: &str) -> IResult<&str, Game> {
-    let (input, _) = tag("Game ")(input)?;
-    let (input, id) = digit1(input)?;
-    let (input, _) = tag(":")(input)?;
-    let (input, subsets) = separated_list1(tag(";"), parse_subset)(input)?;
-    let (input, _) = tag("\n")(input)?;
-    Ok((
-        input,
-        Game {
-            id: id.parse().unwrap(),
-            subsets,
-        },
-    ))
+    let (input, (id, subsets)) = terminated(
+        separated_pair(parse_game_heading, tag(":"), parse_game_body),
+        newline,
+    )(input)?;
+    Ok((input, Game { id, subsets }))
 }
 
 fn parse_subset(input: &str) -> IResult<&str, Subset> {
@@ -97,21 +100,14 @@ fn parse_subset(input: &str) -> IResult<&str, Subset> {
 
 fn parse_set(input: &str) -> IResult<&str, Set> {
     let (input, _) = tag(" ")(input)?;
-    let (input, count) = digit1(input)?;
+    let (input, count) = nom::character::complete::u32(input)?;
     let (input, _) = tag(" ")(input)?;
-    let (input, color) = alt((tag("red"), tag("blue"), tag("green")))(input)?;
-    Ok((
-        input,
-        Set {
-            count: count.parse().unwrap(),
-            color: match color {
-                "red" => Color::Red,
-                "blue" => Color::Blue,
-                "green" => Color::Green,
-                _ => panic!("Unknown color"),
-            },
-        },
-    ))
+    let (input, color) = alt((
+        value(Color::Red, tag("red")),
+        value(Color::Blue, tag("blue")),
+        value(Color::Green, tag("green")),
+    ))(input)?;
+    Ok((input, Set { count, color }))
 }
 
 fn process_1(input: &str) -> u32 {
@@ -143,10 +139,7 @@ fn process_1(input: &str) -> u32 {
 
 fn process_2(input: &str) -> u32 {
     let games = parse(input).unwrap().1;
-    games
-        .iter()
-        .map(|g| g.fewest_possible().power())
-        .sum()
+    games.iter().map(|g| g.fewest_possible().power()).sum()
 }
 
 fn main() {
