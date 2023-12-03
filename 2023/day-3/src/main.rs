@@ -126,8 +126,41 @@ fn process_1(input: &str) -> u32 {
         .sum()
 }
 
+fn process_2(input: &str) -> u32 {
+    let (_, elements) = parse_rows(Span::new(input)).unwrap();
+
+    let parts: Vec<&PartNumber> = elements
+        .iter()
+        .filter_map(|e| {
+            if let Element::PartNumber(pn) = e {
+                Some(pn)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    elements
+        .iter()
+        .filter_map(|e| {
+            if let Element::Symbol(s) = e {
+                let adjacent: Vec<&&PartNumber> =
+                    parts.iter().filter(|p| p.adjacent(&s.position)).collect();
+                if adjacent.len() == 2 {
+                    Some(adjacent[0].number * adjacent[1].number)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
 fn main() {
     println!("{}", process_1(INPUT));
+    println!("{}", process_2(INPUT));
 }
 
 #[test]
@@ -144,4 +177,20 @@ fn test_process_1() {
 .664.598..
 ";
     assert_eq!(4361, process_1(INPUT));
+}
+
+#[test]
+fn test_process_2() {
+    const INPUT: &str = "467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598..
+";
+    assert_eq!(467835, process_2(INPUT));
 }
