@@ -111,13 +111,32 @@ fn parse_almanac(input: &str) -> IResult<&str, Almanac> {
     Ok((input, Almanac { seeds, conversions }))
 }
 
+fn parse_seed_ranges(input: &str) -> IResult<&str, Vec<u64>> {
+    let (input, seed_ranges) = delimited(
+        tag("seeds: "),
+        separated_list1(space1, separated_pair(complete::u64, space1, complete::u64)),
+        line_ending,
+    )(input)?;
+    let seeds = seed_ranges.iter().fold(vec![], |mut acc, (start, len)| {
+        acc.extend(*start..=(*start+*len));
+        acc
+    });
+    Ok((input, seeds))
+}
+fn parse_almanac_with_seed_ranges(input: &str) -> IResult<&str, Almanac> {
+    let (input, (seeds, conversions)) =
+        separated_pair(parse_seed_ranges, line_ending, parse_conversions)(input)?;
+    Ok((input, Almanac { seeds, conversions }))
+}
+
 fn process_1(input: &str) -> u64 {
     let almanac = parse_almanac(input).expect("almanac to parse").1;
     almanac.lowest_location()
 }
 
 fn process_2(input: &str) -> u64 {
-    todo!()
+    let almanac = parse_almanac_with_seed_ranges(input).expect("almanac to parse").1;
+    almanac.lowest_location()
 }
 
 fn main() {
@@ -203,5 +222,5 @@ humidity-to-location map:
 
 ";
 
-    assert_eq!(0, process_2(INPUT));
+    assert_eq!(46, process_2(INPUT));
 }
