@@ -45,9 +45,10 @@ struct Conversion {
 impl Conversion {
     fn convert(&self, seeds: &mut Vec<u64>) {
         for seed in seeds.iter_mut() {
-            if let Some(transformation) = self.transformations.iter().find(|transformation| transformation.source_start <= *seed
-                && *seed < transformation.source_start + transformation.length as u64
-            ) {
+            if let Some(transformation) = self.transformations.iter().find(|transformation| {
+                transformation.source_start <= *seed
+                    && *seed < transformation.source_start + transformation.length as u64
+            }) {
                 *seed = transformation.dest_start + (*seed - transformation.source_start);
             }
         }
