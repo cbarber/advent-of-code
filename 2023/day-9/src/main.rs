@@ -12,8 +12,12 @@ struct History {
 }
 
 impl History {
-    fn value(&self) -> i64 {
+    fn next_value(&self) -> i64 {
         History::next(&self.elements)
+    }
+
+    fn prev_value(&self) -> i64 {
+        History::prev(&self.elements)
     }
 
     fn next(elements: &Vec<i64>) -> i64 {
@@ -25,6 +29,17 @@ impl History {
         let sub = elements.windows(2).map(|w| w[1] - w[0]).collect();
 
         last + History::next(&sub)
+    }
+
+    fn prev(elements: &Vec<i64>) -> i64 {
+        if elements.iter().all(|e| e == &0i64)  {
+            return 0i64;
+        }
+
+        let first = elements.first().expect("elements to not be empty");
+        let sub = elements.windows(2).map(|w| w[1] - w[0]).collect();
+
+        first - History::prev(&sub)
     }
 }
 
@@ -41,11 +56,12 @@ fn parse_histories(input: &str) -> IResult<&str, Vec<History>> {
 
 fn process_1(input: &str) -> i64 {
     let histories = parse_histories(input).expect("input to parse").1;
-    histories.iter().map(|h| h.value()).sum()
+    histories.iter().map(|h| h.next_value()).sum()
 }
 
 fn process_2(input: &str) -> i64 {
-    todo!()
+    let histories = parse_histories(input).expect("input to parse").1;
+    histories.iter().map(|h| h.prev_value()).sum()
 }
 
 fn main() {
@@ -70,5 +86,5 @@ fn test_process_2() {
 10 13 16 21 30 45
 
 ";
-    assert_eq!(0, process_2(INPUT))
+    assert_eq!(2, process_2(INPUT))
 }
