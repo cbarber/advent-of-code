@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 nom.workspace = true
+num = "0.4.1"
+rayon = "1.8.0"

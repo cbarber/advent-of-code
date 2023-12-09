@@ -1,9 +1,10 @@
+use num::integer::lcm;
 use std::collections::HashMap;
 
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{self, alpha1, line_ending},
+    character::complete::{self, alphanumeric1, line_ending},
     combinator::map,
     multi::many1,
     sequence::{delimited, separated_pair, terminated},
@@ -28,11 +29,11 @@ struct Map {
 }
 
 impl Map {
-    fn steps(&self) -> u32 {
+    fn steps(&self, start: &str) -> u32 {
         let mut steps = 0;
-        let mut current = "AAA";
+        let mut current = start;
         let mut directions = self.instructions.iter().cycle();
-        while current != "ZZZ" {
+        while !current.ends_with("Z") {
             let network = self.network.get(current).expect("network to exist");
             current = match directions.next().expect("direction to loop forever") {
                 Direction::Left => &network.left,
@@ -41,6 +42,16 @@ impl Map {
             steps += 1;
         }
         steps
+    }
+
+    fn ghost_steps(&self) -> u64 {
+        self
+            .network
+            .keys()
+            .into_iter()
+            .filter(|k| k.ends_with("A"))
+            .map(|k| self.steps(k) as u64)
+            .fold(1, |acc, count| lcm(acc, count))
     }
 }
 
@@ -58,7 +69,7 @@ fn parse_network(input: &str) -> IResult<&str, Network> {
     delimited(
         complete::char('('),
         map(
-            separated_pair(alpha1, tag(", "), alpha1),
+            separated_pair(alphanumeric1, tag(", "), alphanumeric1),
             |(left, right): (&str, &str)| Network {
                 left: left.to_string(),
                 right: right.to_string(),
@@ -70,7 +81,7 @@ fn parse_network(input: &str) -> IResult<&str, Network> {
 
 fn parse_network_assignment(input: &str) -> IResult<&str, (String, Network)> {
     let (input, (left, network)) = terminated(
-        separated_pair(alpha1, tag(" = "), parse_network),
+        separated_pair(alphanumeric1, tag(" = "), parse_network),
         line_ending,
     )(input)?;
     Ok((input, (left.to_string(), network)))
@@ -92,11 +103,13 @@ fn parse_map(input: &str) -> IResult<&str, Map> {
 fn process_1(input: &str) -> u32 {
     let map = parse_map(input).expect("map to parse").1;
 
-    map.steps()
+    map.steps("AAA")
 }
 
-fn process_2(input: &str) -> u32 {
-    todo!()
+fn process_2(input: &str) -> u64 {
+    let map = parse_map(input).expect("map to parse").1;
+
+    map.ghost_steps()
 }
 
 fn main() {
@@ -134,8 +147,17 @@ ZZZ = (ZZZ, ZZZ)
 
 #[test]
 fn test_process_2() {
-    const INPUT: &str = "
+    const INPUT: &str = "LR
+
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)
 
 ";
-    assert_eq!(0, process_2(INPUT))
+    assert_eq!(6, process_2(INPUT))
 }
