@@ -1,11 +1,13 @@
-use std::collections::HashMap;
+use std::{
+    cmp::{max, min},
+    collections::HashMap,
+};
 
 use nom::{
     branch::alt,
     character::complete::{self, line_ending},
     combinator::map,
-    multi::many1,
-    sequence::terminated,
+    multi::{many1, separated_list1},
     IResult,
 };
 use nom_locate::{position, LocatedSpan};
@@ -153,20 +155,27 @@ impl<'a> Map {
         self.grid.get(&position.r#move(direction))
     }
 
-    fn paths(&'a self) -> (MapWalker<'a>, MapWalker<'a>) {
-        let mut iters: Vec<MapWalker<'a>> = [
+    fn start_connections(&self) -> Vec<Direction> {
+        vec![
             Direction::Up,
             Direction::Down,
             Direction::Left,
             Direction::Right,
         ]
-        .iter()
-        .filter_map(|d| {
+        .into_iter()
+        .filter(|d| {
             self.get(&self.start, d)
-                .filter(|e| e.connections.contains(&d.opposite()))
-                .map(|_| MapWalker::new(self, d.clone()))
+                .is_some_and(|e| e.connections.contains(&d.opposite()))
         })
-        .collect();
+        .collect()
+    }
+
+    fn paths(&'a self) -> (MapWalker<'a>, MapWalker<'a>) {
+        let mut iters: Vec<MapWalker<'a>> = self
+            .start_connections()
+            .into_iter()
+            .map(|d| MapWalker::new(self, d))
+            .collect();
 
         (
             iters.pop().expect("at least one path iterator"),
@@ -218,11 +227,11 @@ fn parse_element(input: Span) -> IResult<Span, ParsedElement> {
 }
 
 fn parse_line(input: Span) -> IResult<Span, Vec<ParsedElement>> {
-    terminated(many1(parse_element), line_ending)(input)
+    many1(parse_element)(input)
 }
 
 fn parse(input: Span) -> IResult<Span, Map> {
-    let (input, lines) = many1(parse_line)(input)?;
+    let (input, lines) = separated_list1(line_ending, parse_line)(input)?;
 
     let elements = lines.into_iter().flatten().collect();
     Ok((input, Map::new(elements)))
@@ -232,14 +241,57 @@ fn process_1(input: &str) -> usize {
     let map = parse(Span::new(input)).expect("map to parse").1;
     let (forward, reverse) = map.paths();
 
-    reverse
-        .zip(forward)
-        .take_while(|(f, r)| f != r)
-        .count() + 1
+    reverse.zip(forward).take_while(|(f, r)| f != r).count() + 1
+}
+
+enum Trace {
+    In,
+    Out,
 }
 
 fn process_2(input: &str) -> u32 {
-    todo!()
+    let map = parse(Span::new(input)).expect("map to parse").1;
+    let (forward, _) = map.paths();
+
+    let mut min_y = usize::MAX;
+    let mut min_x = usize::MAX;
+
+    let mut max_y = usize::MIN;
+    let mut max_x = usize::MIN;
+
+    let mut path =
+        forward
+            .take_while(|f| f.position != map.start)
+            .fold(HashMap::new(), |mut acc, f| {
+                min_y = min(min_y, f.position.y);
+                min_x = min(min_x, f.position.x);
+                max_y = max(max_y, f.position.y);
+                max_x = max(max_x, f.position.x);
+                acc.insert(f.position.clone(), f.connections.clone());
+                acc
+            });
+    path.insert(map.start.clone(), map.start_connections());
+
+    let mut count = 0;
+    for y in min_y..=max_y {
+        let mut trace = Trace::Out;
+        for x in min_x..=max_x {
+            let position = Position { x, y };
+            match (&trace, path.get(&position)) {
+                (Trace::In, None) => {
+                    count += 1;
+                }
+                (Trace::In, Some(directions)) if directions[0] == Direction::Up => {
+                    trace = Trace::Out;
+                }
+                (Trace::Out, Some(directions)) if directions[0] == Direction::Up => {
+                    trace = Trace::In;
+                }
+                _ => {}
+            }
+        }
+    }
+    count
 }
 
 fn main() {
@@ -296,9 +348,51 @@ LJ.LJ
 }
 
 #[test]
-fn test_process_2() {
-    const INPUT: &str = "
+fn test_process_2_example_1() {
+    const INPUT: &str = "...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........
 
 ";
-    assert_eq!(0, process_2(INPUT))
+    assert_eq!(4, process_2(INPUT))
+}
+
+#[test]
+fn test_process_2_example_2() {
+    const INPUT: &str = ".F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ...
+
+";
+    assert_eq!(8, process_2(INPUT))
+}
+
+#[test]
+fn test_process_2_example_3() {
+    const INPUT: &str = "FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+
+";
+    assert_eq!(10, process_2(INPUT))
 }
