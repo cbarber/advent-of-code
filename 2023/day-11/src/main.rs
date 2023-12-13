@@ -23,7 +23,7 @@ struct Image {
 }
 
 impl Image {
-    fn new(galaxies: Vec<Galaxy>) -> Self {
+    fn new(galaxies: Vec<Galaxy>, multiplier: isize) -> Self {
         let present_x: HashSet<isize> = galaxies.iter().map(|g| g.x).collect();
         let empty_x: Vec<isize> = (*present_x.iter().min().expect("min")
             ..*present_x.iter().max().expect("max"))
@@ -39,8 +39,8 @@ impl Image {
         let galaxies = galaxies
             .iter()
             .map(|g| Galaxy {
-                x: g.x + empty_x.iter().filter(|x| **x < g.x).count() as isize,
-                y: g.y + empty_y.iter().filter(|y| **y < g.y).count() as isize,
+                x: g.x + multiplier * empty_x.iter().filter(|x| **x < g.x).count() as isize,
+                y: g.y + multiplier * empty_y.iter().filter(|y| **y < g.y).count() as isize,
             })
             .collect();
 
@@ -60,7 +60,7 @@ impl Image {
     }
 }
 
-fn parse_input(input: &str) -> Image {
+fn parse_input(input: &str, multiplier: isize) -> Image {
     let mut galaxies = Vec::new();
     for (y, line) in input.lines().enumerate() {
         for (x, c) in line.chars().enumerate() {
@@ -72,16 +72,17 @@ fn parse_input(input: &str) -> Image {
             }
         }
     }
-    Image::new(galaxies)
+    Image::new(galaxies, multiplier)
 }
 
 fn process_1(input: &str) -> isize {
-    let image = parse_input(input);
+    let image = parse_input(input, 1);
     image.distances().iter().sum()
 }
 
-fn process_2(input: &str) -> u32 {
-    todo!()
+fn process_2(input: &str) -> isize {
+    let image = parse_input(input, 999999);
+    image.distances().iter().sum()
 }
 
 fn main() {
@@ -108,8 +109,22 @@ fn test_process_1() {
 
 #[test]
 fn test_process_2() {
-    const INPUT: &str = "
+    const INPUT: &str = "...#......
+.......#..
+#.........
+..........
+......#...
+.#........
+.........#
+..........
+.......#..
+#...#.....
 
 ";
-    assert_eq!(0, process_2(INPUT))
+
+    let image = parse_input(INPUT, 9);
+    assert_eq!(1030isize, image.distances().iter().sum());
+
+    let image = parse_input(INPUT, 99);
+    assert_eq!(8410isize, image.distances().iter().sum());
 }
