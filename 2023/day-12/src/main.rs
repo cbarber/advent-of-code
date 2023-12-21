@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fmt::{Display, Write},
     ops::{Deref, DerefMut},
 };
@@ -15,7 +16,7 @@ use nom::{
 
 const INPUT: &str = include_str!("input");
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 enum Condition {
     Operational,
     Damaged,
@@ -67,8 +68,8 @@ impl Display for Record {
 }
 
 impl Record {
-    fn matches(&self, conditions: &Conditions) -> bool {
-        let mut groups: Vec<u32> = conditions
+    fn matches(&self, conditions: &Conditions) -> Option<Vec<u32>> {
+        let groups: Vec<u32> = conditions
             .iter()
             .take_while(|c| c != &&Condition::Unknown)
             .fold(vec![0u32], |mut acc, c| {
@@ -87,31 +88,52 @@ impl Record {
             .filter(|g| g != &0)
             .collect();
 
-        if groups.len() > self.contiguous_groups.len() {
-            return false;
-        }
-
         if conditions.len() == self.conditions.len() {
-            return groups == self.contiguous_groups;
-        }
-
-        let tail = if conditions.len() != self.conditions.len() {
-            groups
-                .pop()
-                .map_or(true, |last| last <= self.contiguous_groups[groups.len()])
+            groups == self.contiguous_groups
+        } else if groups.len() > self.contiguous_groups.len() {
+            false
         } else {
-            true
-        };
+            self.can_match(conditions, &groups)
+        }
+        .then_some(groups)
+    }
 
-        self.contiguous_groups.starts_with(groups.as_slice()) && tail
+    fn can_match(&self, conditions: &Conditions, groups: &Vec<u32>) -> bool {
+        let head = if groups.len() > 0 {
+            0..(groups.len() - 1)
+        } else {
+            0..0
+        };
+        let tail = if groups.len() > 0 {
+            (groups.len() - 1)..groups.len()
+        } else {
+            0..0
+        };
+        let rest = groups.len()..;
+
+        self.contiguous_groups.get(head.clone()) == groups.get(head)
+            && self
+                .contiguous_groups
+                .get(tail.clone())
+                .zip(groups.get(tail))
+                .map_or(true, |(a, b)| b.len() == 0 || b[0] <= a[0])
+            && self.contiguous_groups.get(rest).map_or(true, |r| {
+                r.iter().sum::<u32>() as usize + r.iter().count()
+                    <= self.conditions.len() - conditions.len() + 1
+            })
     }
 
     fn possible_arragements(&self) -> usize {
         let mut current = Conditions(Vec::new());
-        self.depth_first_arrangement_search(&mut current)
+        let mut cache = HashMap::new();
+        self.depth_first_arrangement_search(&mut current, &mut cache)
     }
 
-    fn depth_first_arrangement_search(&self, current: &mut Conditions) -> usize {
+    fn depth_first_arrangement_search(
+        &self,
+        current: &mut Conditions,
+        cache: &mut HashMap<(usize, Vec<u32>), usize>,
+    ) -> usize {
         let len = current.len();
         current.extend(
             self.conditions[len..]
@@ -120,23 +142,42 @@ impl Record {
                 .cloned(),
         );
 
-        let result = if !self.matches(&current) {
-            0
-        } else if current.len() == self.conditions.len() {
-            1
+        let result = if let Some(groups) = self.matches(&current) {
+            if let Some(cache) = cache.get(&(len, groups.clone())) {
+                *cache
+            } else if current.len() == self.conditions.len() {
+                1
+            } else {
+                current.push(Condition::Operational);
+                let left = self.depth_first_arrangement_search(current, cache);
+                current.pop().expect("element popped");
+
+                current.push(Condition::Damaged);
+                let right = self.depth_first_arrangement_search(current, cache);
+                current.pop().expect("element popped");
+
+                if current.last().is_some_and(|l| l == &Condition::Operational) {
+                    cache.insert((len, groups), left + right);
+                }
+
+                left + right
+            }
         } else {
-            current.push(Condition::Operational);
-            let left = self.depth_first_arrangement_search(current);
-            current.pop().expect("element popped");
-
-            current.push(Condition::Damaged);
-            let right = self.depth_first_arrangement_search(current);
-            current.pop().expect("element popped");
-            left + right
+            0
         };
-
         current.truncate(len);
         result
+    }
+
+    fn unfold(&self, times: usize) -> Record {
+        let conditions = (0..times)
+            .map(|_| self.conditions.clone())
+            .collect::<Vec<Vec<Condition>>>()
+            .join(&Condition::Unknown);
+        Record {
+            conditions: Conditions(conditions),
+            contiguous_groups: self.contiguous_groups.repeat(times),
+        }
     }
 }
 
@@ -172,8 +213,14 @@ fn process_1(input: &str) -> usize {
     records.iter().map(|r| r.possible_arragements()).sum()
 }
 
-fn process_2(input: &str) -> u32 {
-    todo!()
+fn process_2(input: &str) -> usize {
+    let records = parse(input).expect("records to parse").1;
+
+    records
+        .iter()
+        .map(|r| r.unfold(5))
+        .map(|r| r.possible_arragements())
+        .sum()
 }
 
 fn main() {
@@ -205,5 +252,5 @@ fn test_process_2() {
 ?###???????? 3,2,1
 
 ";
-    assert_eq!(0, process_2(INPUT))
+    assert_eq!(525152, process_2(INPUT))
 }
