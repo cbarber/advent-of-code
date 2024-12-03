@@ -16,6 +16,7 @@ func main() {
 		panic(fmt.Sprintf("failed to parse input: %v", err))
 	}
 	fmt.Printf("Part 1: %d", Part1(left, right))
+	fmt.Printf("Part 2: %d", Part2(left, right))
 }
 
 func ReadInputFile() []byte {
@@ -75,6 +76,22 @@ func Part1(left []int, right []int) int {
 			diff = -diff
 		}
 		total += diff
+	}
+
+	return total
+}
+
+func Part2(left []int, right []int) int {
+	right_counts := map[int]int{}
+
+	total := 0
+
+	for _, r := range right {
+		right_counts[r] += 1
+	}
+
+	for _, l := range left {
+		total += l * right_counts[l]
 	}
 
 	return total

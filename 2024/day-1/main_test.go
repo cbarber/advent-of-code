@@ -40,3 +40,14 @@ func TestPart1(t *testing.T) {
 		t.Fatalf("expected result %d to equal 11: ", result)
 	}
 }
+
+func TestPart2(t *testing.T) {
+	left := []int{3, 4, 2, 1, 3, 3}
+	right := []int{4, 3, 5, 3, 9, 3}
+
+	result := Part2(left, right)
+
+	if result != 31 {
+		t.Fatalf("expected result %d to equal 31: ", result)
+	}
+}
