@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -euf -o pipefail
+
+day=${1:-$(date +%-d)}
+year=${2:-$(date +%Y)}
+
+mkdir day-"$day"
+
+pushd "day-$day"
+go mod init "day-$day"
+aoc --day $day --puzzle-file brief.md --input-file input download
+popd
+
+go work use day-"$day"
+git add day-"$day"
+git add go.work
+
+nvim day-"$day"/brief.md
