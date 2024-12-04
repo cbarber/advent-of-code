@@ -1,3 +1,6 @@
 go 1.23.3
 
-use ./day-1
+use (
+	./day-1
+	./day-2
+)
