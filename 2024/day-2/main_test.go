@@ -46,3 +46,20 @@ func TestPart1(t *testing.T) {
 		t.Fatalf("actual %d did not equal expected 2: ", result)
 	}
 }
+
+func TestPart2(t *testing.T) {
+	reports := [][]int{
+		{7, 6, 4, 2, 1},
+		{1, 2, 7, 8, 9},
+		{9, 7, 6, 2, 1},
+		{1, 3, 2, 4, 5},
+		{8, 6, 4, 4, 1},
+		{1, 3, 6, 7, 9},
+	}
+
+	result := Part2(reports)
+
+	if result != 4 {
+		t.Fatalf("actual %d did not equal expected 4: ", result)
+	}
+}

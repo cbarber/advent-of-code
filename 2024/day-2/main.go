@@ -14,7 +14,8 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse input: %v", err))
 	}
-	fmt.Printf("Part 1: %d", Part1(reports))
+	fmt.Printf("Part 1: %d\n", Part1(reports))
+	fmt.Printf("Part 2: %d\n", Part2(reports))
 }
 
 func ReadInputFile() []byte {
@@ -95,4 +96,41 @@ func IsRowSafe(row []int) uint8 {
 	}
 
 	return 1
+}
+
+func Part2(reports [][]int) int {
+	total := 0
+
+	for _, row := range reports {
+		if len(row) < 2 {
+			continue
+		}
+		result := int(IsRowSafeLessOne(row))
+		total += result
+	}
+
+	return total
+}
+
+func IsRowSafeLessOne(row []int) uint8 {
+	if IsRowSafe(row) == 1 {
+		return 1
+	}
+
+	for i := 0; i < len(row); i++ {
+		less_one := remove(row, i)
+		result := IsRowSafe(less_one)
+		if result == 1 {
+			return 1
+		}
+	}
+
+	return 0
+}
+
+func remove(slice []int, s int) []int {
+	ret := make([]int, 0)
+	ret = append(ret, slice[:s]...)
+	ret = append(ret, slice[s+1:]...)
+	return ret
 }
