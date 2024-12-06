@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -13,6 +14,7 @@ func main() {
 		panic(fmt.Sprintf("failed to parse input: %v", err))
 	}
 	fmt.Printf("Part 1: %d\n", Part1(result))
+	fmt.Printf("Part 2: %d\n", Part2(result))
 }
 
 func ReadInputFile() []byte {
@@ -78,4 +80,34 @@ func search(grid [][]rune, i, j int, s string, delta ...int) int {
 		search(grid, i+1, j-1, next, 1, -1) +
 		search(grid, i+1, j, next, 1, 0) +
 		search(grid, i+1, j+1, next, 1, 1)
+}
+
+func Part2(grid [][]rune) int {
+	total := 0
+
+	allowed := [][]rune{
+		[]rune("MMSS"),
+		[]rune("MSSM"),
+		[]rune("SSMM"),
+		[]rune("SMMS"),
+	}
+
+	for i := 1; i < len(grid)-1; i++ {
+		for j := 1; j < len(grid[i])-1; j++ {
+			if grid[i][j] != 'A' {
+				continue
+			}
+
+			outer := []rune{grid[i-1][j-1], grid[i-1][j+1], grid[i+1][j+1], grid[i+1][j-1]}
+
+			for _, allow := range allowed {
+				if reflect.DeepEqual(outer, allow) {
+					total += 1
+					break
+				}
+			}
+		}
+	}
+
+	return total
 }
