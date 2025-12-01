@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -euf -o pipefail
+
+day=${1:-$(date +%-d)}
+year=${2:-$(date +%Y)}
+
+dasel --indent 0 put -t string -f Cargo.toml -v "day-$day" 'workspace.members.[]'
+cargo new "day-$day"
+
+pushd "day-$day"
+cp ../main.rs.template src/main.rs
+aoc --day $day --puzzle-file brief.md --input-file src/input download
+popd
+
+git add Cargo.toml
+git add day-"$day"
+
+zeditor day-"$day"/brief.md
