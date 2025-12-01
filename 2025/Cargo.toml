@@ -1,7 +1,7 @@
 [workspace]
-  members = []
-  resolver = '2'
+members = ['day-1']
+resolver = '2'
 
-  [workspace.dependencies]
-    nom = '8.0.0'
-    thiserror = '2.0.17'
+[workspace.dependencies]
+nom = '8.0.0'
+thiserror = '2.0.17'
