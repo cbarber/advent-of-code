@@ -16,4 +16,4 @@ popd
 git add Cargo.toml
 git add day-"$day"
 
-zeditor day-"$day"/brief.md
+zeditor day-"$day"/
