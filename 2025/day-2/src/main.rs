@@ -1,9 +1,11 @@
 use anyhow::Result;
 use fancy_regex::Regex;
+use lazy_static::lazy_static;
 use nom::{
     IResult, Parser,
     bytes::tag,
     character::{complete::multispace0, digit1},
+    combinator::map,
     multi::separated_list1,
     sequence::separated_pair,
 };
@@ -15,16 +17,35 @@ struct IdRange {
     stop: String,
 }
 
+lazy_static! {
+    static ref ID1: Regex = Regex::new(r"^(\d+)\1$").unwrap();
+    static ref ID2: Regex = Regex::new(r"^(\d+)\1+$").unwrap();
+}
+
 impl IdRange {
     fn get_invalid_ids(&self) -> Result<Vec<u64>> {
         let mut invalid_ids = Vec::new();
-        let regex = Regex::new(r"^(\d+)\1$")?;
 
         let start = self.start.parse::<u64>()?;
         let stop = self.stop.parse::<u64>()?;
 
         for id in start..=stop {
-            if regex.is_match(&id.to_string()).unwrap() {
+            if ID1.is_match(&id.to_string()).unwrap() {
+                invalid_ids.push(id);
+            }
+        }
+
+        Ok(invalid_ids)
+    }
+
+    fn get_invalid_ids_2(&self) -> Result<Vec<u64>> {
+        let mut invalid_ids = Vec::new();
+
+        let start = self.start.parse::<u64>()?;
+        let stop = self.stop.parse::<u64>()?;
+
+        for id in start..=stop {
+            if ID2.is_match(&id.to_string()).unwrap() {
                 invalid_ids.push(id);
             }
         }
@@ -46,15 +67,14 @@ fn parse_ranges(input: &str) -> Result<Vec<IdRange>> {
 }
 
 fn parse_id_range(input: &str) -> IResult<&str, IdRange> {
-    let (remaining, (start, stop)) = separated_pair(digit1(), tag("-"), digit1()).parse(input)?;
-
-    Ok((
-        remaining,
-        IdRange {
+    map(
+        separated_pair(digit1(), tag("-"), digit1()),
+        |(start, stop): (&str, &str)| IdRange {
             start: start.to_string(),
             stop: stop.to_string(),
         },
-    ))
+    )
+    .parse(input)
 }
 
 fn process_1(input: &str) -> u64 {
@@ -66,7 +86,11 @@ fn process_1(input: &str) -> u64 {
 }
 
 fn process_2(input: &str) -> u64 {
-    todo!()
+    let id_ranges = parse_ranges(input).unwrap();
+    id_ranges
+        .iter()
+        .flat_map(|range| range.get_invalid_ids_2().unwrap())
+        .sum()
 }
 
 fn main() {

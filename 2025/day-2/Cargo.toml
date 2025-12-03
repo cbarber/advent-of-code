@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 fancy-regex = "0.16.2"
+lazy_static = "1.5.0"
 nom.workspace = true
